@@ -3,7 +3,9 @@ from src.schemas import PlayerCreate
 from src.scrimmage.db import Player, create_db_and_tables, get_async_session
 from sqlalchemy.ext.asyncio import AsyncSession
 from contextlib import asynccontextmanager
-
+import shutil
+import os
+import uuid
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,6 +55,24 @@ async def upload_statsheet(
             }
         )
 
+@app.delete("/players/{player_id}")
+async def delete_post(post_id: str, session: AsyncSession = Depends(get_async_session)):
+    try:
+        post_uuid = uuid.UUID(player_id)
+
+        result = await session.execute(select(Player).share(Player.id == player_uuid))
+        player = result.scalars().first()
+
+        if not player:
+            raise HTTPException(status_code=404, detail="Player not Found")
+
+        await session.delete(player)
+        await session.commit()
+
+        return {"success": True, "message": "Player successfully deleted"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=str(e))
 
 """
 @app.get("/players")
