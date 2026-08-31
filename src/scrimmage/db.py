@@ -1,36 +1,97 @@
 from collections.abc import AsyncGenerator
 import uuid
+from datetime import date
+from enum import Enum as PyEnum
 
-from sqlalchemy import Column, String, Text, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy import Column, Date, Integer, String, ForeignKey, Enum, Uuid
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship
-from datetime import datetime
-from fastapi_users.db import SQLAlchemyUserDatabase, SQLAlchemyBaseUserTableUUID
 
 
-DATABASE_URL = "sqlite+aiosqlite:///.test.db" #Asynch version of sqlite
+DATABASE_URL = "sqlite+aiosqlite:///.test.db"  # async sqlite connection
 
 
 class Base(DeclarativeBase):
     pass
-# Create a data model for storing...
+
+
+class Position(str, PyEnum):
+    QB = "QB"
+    RB = "RB"
+    WR = "WR"
+    TE = "TE"
+    OT = "OT"
+    G = "G"
+    C = "C"
+    DE = "DE"
+    DT = "DT"
+    LB = "LB"
+    CB = "CB"
+    S = "S"
+    K = "K"
+    P = "P"
 
 
 class Player(Base):
-    __tablename__ = "posts"
+    __tablename__ = "players"
 
-    id = Column(UUID(as_uuid=True),primary_key=True,default=uuid.uuid4)
-    name = Column(Text)
-    profile_pic = Column(String, nullable=False)
-    file_type = Column(String, nullable=False)
-    file_name = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    first_name = Column(String, nullable=False)
+    last_name = Column(String, nullable=False)
+    position = Column(Enum(Position), nullable=False)
+    team = Column(String, nullable=False)
+    jersey_number = Column(Integer, nullable=True)
+    height = Column(String, nullable=True)
+    weight = Column(Integer, nullable=True)
+    photo_url = Column(String, nullable=True)
+    college = Column(String, nullable=True)
+    birth_date = Column(Date, nullable=True)
+
+    season_stats = relationship(
+        "PlayerSeasonStats",
+        back_populates="player",
+        cascade="all, delete-orphan",
+    )
 
 
-#create the database
+class PlayerSeasonStats(Base):
+    __tablename__ = "player_season_stats"
+
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    player_id = Column(Uuid, ForeignKey("players.id"), nullable=False)
+    season = Column(Integer, nullable=False)
+
+    # Passing stats
+    passing_yards = Column(Integer, nullable=True)
+    passing_tds = Column(Integer, nullable=True)
+    interceptions = Column(Integer, nullable=True)
+
+    # Rushing stats
+    rushing_yards = Column(Integer, nullable=True)
+    rushing_tds = Column(Integer, nullable=True)
+
+    # Receiving stats
+    receptions = Column(Integer, nullable=True)
+    receiving_yards = Column(Integer, nullable=True)
+    receiving_tds = Column(Integer, nullable=True)
+
+    # Defensive stats
+    sacks = Column(Integer, nullable=True)
+    tackles = Column(Integer, nullable=True)
+    forced_fumbles = Column(Integer, nullable=True)
+    pass_deflections = Column(Integer, nullable=True)
+
+    # Kicking stats
+    field_goals = Column(Integer, nullable=True)
+    extra_points = Column(Integer, nullable=True)
+
+    player = relationship("Player", back_populates="season_stats")
+
+
+# create the database
 engine = create_async_engine(DATABASE_URL)
 async_sessionmaker = async_sessionmaker(engine, expire_on_commit=False)
+
 
 async def create_db_and_tables():
     async with engine.begin() as conn:
