@@ -21,6 +21,11 @@ class PlayerStats(BaseModel):
     extra_points: int | None = None
 
 
+class PlayerSeasonStatsCreate(BaseModel):
+    season: int = 2025
+    stats: PlayerStats
+
+
 class PlayerCreate(BaseModel):
     first_name: str
     last_name: str
