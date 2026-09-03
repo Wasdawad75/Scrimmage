@@ -1,9 +1,9 @@
 from collections.abc import AsyncGenerator
 import uuid
-from datetime import date
+from datetime import date, datetime, timezone
 from enum import Enum as PyEnum
 
-from sqlalchemy import Column, Date, Integer, String, ForeignKey, Enum, Uuid
+from sqlalchemy import Column, Date, DateTime, ForeignKey, Integer, String, Enum, Uuid
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, relationship
 
@@ -52,6 +52,11 @@ class Player(Base):
         back_populates="player",
         cascade="all, delete-orphan",
     )
+    roster_players = relationship(
+        "RosterPlayer",
+        back_populates="player",
+        cascade="all, delete-orphan",
+    )
 
 
 class PlayerSeasonStats(Base):
@@ -86,6 +91,36 @@ class PlayerSeasonStats(Base):
     extra_points = Column(Integer, nullable=True)
 
     player = relationship("Player", back_populates="season_stats")
+
+
+class Roster(Base):
+    __tablename__ = "rosters"
+
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+    players = relationship(
+        "RosterPlayer",
+        back_populates="roster",
+        cascade="all, delete-orphan",
+    )
+
+
+class RosterPlayer(Base):
+    __tablename__ = "roster_players"
+
+    id = Column(Uuid, primary_key=True, default=uuid.uuid4)
+    roster_id = Column(Uuid, ForeignKey("rosters.id"), nullable=False)
+    player_id = Column(Uuid, ForeignKey("players.id"), nullable=False)
+    slot = Column(String, nullable=False)
+
+    roster = relationship("Roster", back_populates="players")
+    player = relationship("Player", back_populates="roster_players")
 
 
 # create the database

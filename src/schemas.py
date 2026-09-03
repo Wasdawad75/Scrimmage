@@ -26,6 +26,15 @@ class PlayerSeasonStatsCreate(BaseModel):
     stats: PlayerStats
 
 
+class RosterCreate(BaseModel):
+    name: str
+
+
+class DraftPlayer(BaseModel):
+    player_id: str
+    slot: str
+
+
 class PlayerCreate(BaseModel):
     first_name: str
     last_name: str
