@@ -6,7 +6,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
 from src.schemas import DraftPlayer, RosterCreate
-from src.scrimmage.db import Player, Roster, RosterPlayer, get_async_session
+from src.scrimmage.db import Player, Roster, RosterPlayer, Era, ERA_RANGES, PlayerSeasonStats, get_async_session
 
 
 router = APIRouter(prefix="/rosters", tags=["rosters"])
@@ -77,6 +77,25 @@ async def draft_player(
     if draft_data.slot not in VALID_SLOTS:
         raise HTTPException(status_code=400, detail="Invalid slot")
 
+    try:
+        era_enum = Era(draft_data.era)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid era")
+
+    era_start, era_end = ERA_RANGES[era_enum]
+    stats_check = await session.execute(
+        select(PlayerSeasonStats).where(
+            PlayerSeasonStats.player_id == player_uuid,
+            PlayerSeasonStats.season >= era_start,
+            PlayerSeasonStats.season <= era_end,
+        )
+    )
+    if stats_check.scalars().first() is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Player has no recorded stats in the {era_enum.value} era",
+        )
+
     if draft_data.slot in NAMED_SLOTS:
         slot_result = await session.execute(
             select(RosterPlayer).where(
@@ -91,6 +110,7 @@ async def draft_player(
         roster_id=roster_uuid,
         player_id=player_uuid,
         slot=draft_data.slot,
+        era=era_enum,
     )
     session.add(roster_player)
     await session.commit()
@@ -101,6 +121,7 @@ async def draft_player(
         "roster_id": str(roster_player.roster_id),
         "player_id": str(roster_player.player_id),
         "slot": roster_player.slot,
+        "era": roster_player.era.value,
     }
 
 

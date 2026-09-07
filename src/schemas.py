@@ -33,6 +33,7 @@ class RosterCreate(BaseModel):
 class DraftPlayer(BaseModel):
     player_id: str
     slot: str
+    era: str
 
 
 class PlayerCreate(BaseModel):

@@ -31,6 +31,46 @@ class Position(str, PyEnum):
     K = "K"
     P = "P"
 
+class Era(str, PyEnum):
+    T_FORMATION = "t_formation_revolution"          # 1940-1949
+    TWO_WAY_PLATOON = "two_way_platoon_fullback"     # 1950-1957
+    PROTO_SPREAD = "proto_spread_pocket_passing"     # 1958-1967
+    VERTICAL_AIR_CORYELL = "vertical_air_coryell"    # 1968-1977
+    WEST_COAST_BOOM = "west_coast_boom"              # 1978-1985
+    BLINDSIDE_ONE_BACK = "blindside_one_back"        # 1986-1993
+    ZONE_BLITZ_WORKHORSE = "zone_blitz_workhorse"    # 1994-2003
+    SHOTGUN_REVOLUTION = "shotgun_revolution"        # 2004-2010
+    RPO_ERA = "rpo_era"                              # 2011-2017
+    TWO_HIGH_MOBILE_QB = "two_high_mobile_qb"        # 2018-2023
+    HEAVY_RUN_MODERN = "heavy_run_modern"            # 2024-present
+
+ERA_RANGES = {
+    Era.T_FORMATION: (1940, 1949),
+    Era.TWO_WAY_PLATOON: (1950, 1957),
+    Era.PROTO_SPREAD: (1958, 1967),
+    Era.VERTICAL_AIR_CORYELL: (1968, 1977),
+    Era.WEST_COAST_BOOM: (1978, 1985),
+    Era.BLINDSIDE_ONE_BACK: (1986, 1993),
+    Era.ZONE_BLITZ_WORKHORSE: (1994, 2003),
+    Era.SHOTGUN_REVOLUTION: (2004, 2010),
+    Era.RPO_ERA: (2011, 2017),
+    Era.TWO_HIGH_MOBILE_QB: (2018, 2023),
+    Era.HEAVY_RUN_MODERN: (2024, 2029),
+}
+
+ERA_LABELS = {
+    Era.T_FORMATION: "The T-Formation Revolution",
+    Era.TWO_WAY_PLATOON: "The Two-Way Split & Power Fullback Era",
+    Era.PROTO_SPREAD: "The Proto-Spread & Pocket Passing Era",
+    Era.VERTICAL_AIR_CORYELL: "The Deep-Shot & Vertical Era",
+    Era.WEST_COAST_BOOM: "The Mel Blount Rule & West Coast Boom",
+    Era.BLINDSIDE_ONE_BACK: "The Blindside Rush & One-Back Era",
+    Era.ZONE_BLITZ_WORKHORSE: "The Zone-Blitz & Workhorse Back Era",
+    Era.SHOTGUN_REVOLUTION: "The Ty Law Rule & Shotgun Revolution",
+    Era.RPO_ERA: "The Defenseless Receiver & RPO Era",
+    Era.TWO_HIGH_MOBILE_QB: "The Two-High Shell & Mobile QB Era",
+    Era.HEAVY_RUN_MODERN: "The Post-Simms/Fangio Heavy-Run Era",
+}
 
 class Player(Base):
     __tablename__ = "players"
@@ -111,6 +151,7 @@ class Roster(Base):
     )
 
 
+
 class RosterPlayer(Base):
     __tablename__ = "roster_players"
 
@@ -118,6 +159,7 @@ class RosterPlayer(Base):
     roster_id = Column(Uuid, ForeignKey("rosters.id"), nullable=False)
     player_id = Column(Uuid, ForeignKey("players.id"), nullable=False)
     slot = Column(String, nullable=False)
+    era = Column(Enum(Era), nullable=False)
 
     roster = relationship("Roster", back_populates="players")
     player = relationship("Player", back_populates="roster_players")
